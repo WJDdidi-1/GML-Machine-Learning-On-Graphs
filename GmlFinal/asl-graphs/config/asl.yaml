@@ -1,0 +1,37 @@
+seed: 100
+height: 64
+width: 80
+pose_type: 'no_face' # no_pose, no_face, no_hands, only_hands
+path: '/Users/felixwjd/Desktop/GmlFinal/asl-graphs'
+config_file: '/Users/felixwjd/Desktop/GmlFinal/asl-graphs/config/classes_3.csv'
+# config_file: '/scratch/tkg5kq/asl-graphs/config/small.csv'
+debug: False
+sample_num: 20
+samples_per_video: 10
+test_size: 0.2
+epochs: 500
+load_file: ''
+train_type: 'graphs' # 'lstm' # 
+lr: 5e-2
+batch_size: 64
+parallel: False
+gpus: 2
+freq: 10
+tqdm: False
+solver:
+    type: cosine
+    epochs: 500
+    start_epoch: 0
+    epoch_offset: 0
+    optim: adamw
+    lr: 1.e-2
+    lr_warmup_step: 5
+    momentum: 0.9
+    weight_decay: 0.2
+    lr_decay_step: 15
+    lr_decay_factor: 0.1
+    clip_gradient: 20
+    loss_type: nll
+    evaluate: False
+    ratio: 1
+    f_ratio: 10
