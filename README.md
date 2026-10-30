@@ -1,33 +1,80 @@
-# GraphTALK: ASL Sign Language Recognition using Graph Neural Networks
+# GraphTALK — ASL recognition from skeleton graphs (GNN)
 
-## 项目背景
-美国手语（ASL）识别在背景复杂、光照变化和手势多样性方面存在较大挑战。传统基于图像的识别方法容易受到背景干扰，且对手势动态变化的捕捉不足。
+American Sign Language recognition from **hand/pose skeletons instead of RGB
+pixels**: MediaPipe extracts keypoints per frame, the clip becomes a graph, and
+a graph neural network classifies the sign. Skeleton input removes background
+and lighting from the problem entirely, which is why this route is worth trying
+on a 24-class WLASL subset.
 
-## 项目目标
-利用图神经网络（GNN）对 Mediapipe 提取的骨骼点数据进行时序建模，从而在无需依赖 RGB 背景的情况下实现高精度 ASL 手语识别。
+Course project for *Machine Learning on Graphs* (UVA). The code is the artifact;
+accuracy numbers from the report are not reproduced here, and this README does
+not claim any.
 
-## 技术栈
-- **编程语言**: Python
-- **框架**: PyTorch Geometric
-- **数据处理**: Mediapipe Pose & Hands
-- **数据集**: WLASL 子集（24 类手势）
+## Pipeline
 
-## 主要功能
-- Mediapipe 提取骨骼关键点并生成图结构数据
-- Temporal Graph Network 建模时序信息
-- 分类 24 类 ASL 手势
+```
+WLASL videos ──► preprocessing/download_wasl.py   (fetch clips)
+             ──► preprocessing/extract.py          (frames → MediaPipe keypoints)
+             ──► wlasl_dataloader.py               (windows of frames → PyG graphs)
+             ──► gcn.py / train.py                 (GCN / temporal GNN)
+             ──► test.py                           (validation, confusion matrix)
+```
 
-## 你的贡献
-- 设计并实现 GNN 模型结构
-- 构建数据处理 pipeline（骨骼点 → 图结构 → 模型输入）
-- 优化模型参数，提升分类精度与鲁棒性
+- `config/asl.yaml` — the run config: 64×80 frames, `pose_type: no_face` (drop
+  face landmarks, keep pose + hands), 10 samples per video, 500 epochs,
+  `train_type: graphs` (the `lstm` branch is also wired).
+- `gcn.py` — `GCNConv` layers with `global_mean_pool`: the spatial-only path.
+- `train.py` — the temporal path: `tensorflow_gnn` over the same graph inputs.
+- `wlasl_dataloader.py` — builds `InMemoryDataset` windows from extracted
+  keypoints; `vids_per_label.txt` is the class-count audit from preparation.
+- `graph_pred.py`, `test.py`, `utils.py`, `lr_scheduler.py` — inference,
+  validation/metrics, helpers, warmup schedules.
 
-## 成果
-- 在 WLASL 子集上获得较高准确率，并在不同背景条件下保持稳定性能
+## Running it
 
-## 使用方法
-```bash
-git clone https://github.com/yourusername/GraphTALK.git
-cd GraphTALK
-pip install -r requirements.txt
-python train.py
+```console
+# 1. environment (full conda line in GmlFinal/asl-graphs/README.md)
+$ conda create --name bound -y && conda activate bound
+$ conda install pytorch==2.2.1 torchvision==0.17.1 pytorch-cuda=12.1 -c pytorch -c nvidia -y
+$ python -m pip install 'numpy<2' pandas opencv-python mediapipe \
+      torch-geometric tensorflow tensorflow-gnn pyyaml dotmap tqdm scikit-learn
+
+# 2. data
+$ python preprocessing/download_wasl.py      # WLASL clips
+$ python preprocessing/extract.py            # frames → keypoints
+
+# 3. train / evaluate
+$ python train.py --config config/asl.yaml
+$ python test.py
+```
+
+A CUDA GPU is required in practice: 500 epochs × 10 samples per clip is not a
+laptop workload. `config/asl.yaml` still holds absolute paths from the machine
+this ran on (`path:` and `config_file:` point at a Desktop folder) — edit those
+two lines before a run.
+
+## What is and is not in here
+
+- **In here**: the pipeline, both model paths (spatial GCN, temporal GNN), the
+  class lists, the preparation audit files, and the exploratory notebooks
+  (`notebook/mediapipe_pose.ipynb`, `graph_pred.ipynb`, `new_pred.ipynb`).
+- **Not in here**: WLASL videos and extracted frames (too large), checkpoints,
+  and the report. No accuracy number is claimed, because none can be reproduced
+  from this checkout without the dataset.
+
+## Limits worth naming
+
+- 24 classes with a small per-class sample count: a feasibility study, not a
+  deployable recogniser.
+- `train.py` and `gcn.py` sit on different stacks (TensorFlow-GNN vs
+  PyTorch-Geometric). Comparing them was the point of the experiment, but the
+  two entry points need different environments.
+- MediaPipe keypoints are noisy under occlusion, and the graph drops confidence
+  information.
+- The repository root previously carried a README describing a project called
+  GraphTALK with a `git clone …/yourusername/GraphTALK.git` placeholder; the
+  code lives under `GmlFinal/asl-graphs/`, which is what this README documents.
+
+## License
+
+No license file, so the default applies: all rights reserved.

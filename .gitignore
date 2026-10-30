@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.DS_Store
+# datasets and checkpoints are not committed
+WLASL/
+data/
+frames/
+*.pth
+*.ckpt
+wandb/
+.venv/
