@@ -19,7 +19,10 @@ def move_videos(wlasl_dir, wlasl_df, new_dir='videos_org', threshold=10):
         if len(video_ids_exists) > threshold: 
             # print(word, len(video_ids_exists), len(video_ids_no_exists), len(video_ids_exists) + len(video_ids_no_exists), instance_len)
     
-            dst_path = os.path.join(f'{wlasl_dir}', f'{new_dir}', f'{'_'.join(word.replace('\'', '').split(' '))}')
+            # Build the label first: nested f-strings that reuse the same quote
+            # only parse on Python 3.12+, and this file has to run on 3.10.
+            label = '_'.join(word.replace("'", '').split(' '))
+            dst_path = os.path.join(f'{wlasl_dir}', f'{new_dir}', label)
             os.makedirs(dst_path, exist_ok=True)
             for idx in video_ids_exists:
                 src = os.path.join(f'{wlasl_dir}', 'videos', f'{idx}.mp4')
