@@ -61,6 +61,10 @@ two lines before a run.
 - **Not in here**: WLASL videos and extracted frames (too large), checkpoints,
   and the report. No accuracy number is claimed, because none can be reproduced
   from this checkout without the dataset.
+- **Removed on purpose**: the two committed `test.jpg` files. They were a
+  watermarked stock photo used as a pose-drawing sample, not an output of this
+  pipeline, and there was no licence to redistribute it. `notebook/mediapipe_pose.ipynb`
+  writes that file itself when you run it.
 
 ## Limits worth naming
 
